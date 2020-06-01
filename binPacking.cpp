@@ -1,175 +1,128 @@
-
-/* 
-Done By>> Anand Kothari
-
-
-" Reading Input from bin.txt " 
-
-In the bin packing problem, items of different weights (or sizes) must be packed into a finite number of bins each with the capacity Cin a way that minimizes the number of bins used.The decision version of the bin packing problem(deciding if objects will fit into <= k bins) isNP-complete.  There is no known polynomial time algorithm to solve the optimization version of the bin packing problem.  In this homework you will be examining three greedy approximation algorithms to solve the bin packing problem.
-
-First-Fit:Put each item as you come to it into the first (earliest opened) bin into which it fits.  If there is no available bin then open a new bin.
-
-First-Fit-Decreasing: First sort the items in decreasing order by size, then use First-Fit on the resulting list.
-
-Example bin.txt:   The first line is the number of test cases, followed by the capacity of bins for that test case, the number of items and then the weight of each item.  You can assume that the weight of an item does not exceed the capacity of a bin for that problem.
-
-3
-10
-6
-5 10 2 5 4 4
-20
-19
-9 10 2 1 7 3 3 3 3 14 6 5 2 8 6 4 6 2 6
-10
-20
-4 4 4 4 4 4 4 4 4 4 6 6 6 6 6 6 6 6 6 6
-
-Sample Output::
-Test Case: 1 First Fit: 4, First Fit Decreasing: 3
-Test Case: 2 First Fit: 6, First Fit Decreasing: 5
-Test Case: 3 First Fit: 15, First Fit Decreasing: 10
-
-*/
-
 #include <iostream>
-#include <vector>
 #include <fstream>
-#include <bits/stdc++.h>
+#include <vector>
+#include <algorithm>
+#include <sstream>
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::greater;
-using std::ifstream;
-using std::vector;
+using namespace std;
 
-vector<int> item_Weight_Vector;
+int firstFit(vector<int> weights, int capacity, int itemIndex);
+int firstFitDecreasing(vector<int> weights, int capacity, int itemIndex);
+int bestFit(vector<int> weights, int capacity, int itemIndex);
 
-int firstFit(int capacity, vector<int> item_Weights)
-{
-    vector<int> binCapLeft;
-    binCapLeft.push_back(capacity);
+int main() {
+	int rowIndex = 0;
+	int itemIndex = 0;
+	int testCases = 0;
+	int capacity = 0;
+	vector<int> weightsVector;
+	string line;
+	stringstream row;
+	
+	ifstream myInputFile("bin.txt");
+	if (getline(myInputFile, line)) {
+		// read first line and assign it to test case
+		stringstream row(line);
+		if (row >> rowIndex) {
+			testCases = rowIndex;
+		}
 
-    for (int i = 0; i < item_Weights.size(); i++)
+		for (int i = 0; i < testCases; i++) {
+			// read 3 lines for each test cases, and assign it to proper variable
+			getline(myInputFile, line);
+			stringstream row1(line);
+			row1 >> rowIndex;
+			capacity = rowIndex;
 
-    {
-        bool canFit = true;
+			getline(myInputFile, line);
+			stringstream row2(line);
+			row2 >> rowIndex;
+			itemIndex = rowIndex;
 
-        for (int j = 0; j < binCapLeft.size(); j++)
-        {
-            if (item_Weights[i] <= binCapLeft[j])
-            {
-                binCapLeft[j] -= item_Weights[i];
-                canFit = false;
-                break;
-            }
-        }
+			getline(myInputFile, line);
+			stringstream row3(line);
+			row3 >> rowIndex;
+			for (int k = 0; k < itemIndex; k++) {
+				weightsVector.push_back(rowIndex);
+				row3 >> rowIndex;
+			}
 
-        if (canFit == true)
-        {
-            binCapLeft.push_back(capacity);
-            binCapLeft[binCapLeft.size() - 1] -= item_Weights[i];
-        }
-    }
+			int ffResult = firstFit(weightsVector, capacity, itemIndex);
+			int ffdResult = firstFitDecreasing(weightsVector, capacity, itemIndex);
+			int bfResult = bestFit(weightsVector, capacity, itemIndex);
 
-    return binCapLeft.size();
+			cout << "Test Case " << i + 1 << " First Fit: " << ffResult
+				<< ", First Fit Decreasing: " << ffdResult
+				<< ", Best Fit: " << bfResult << endl;
+
+			for (int i = 0; i < itemIndex; i++) {
+				weightsVector.erase(weightsVector.begin());
+			}
+		}
+	}
+	return 0;
 }
 
-int bestFit(int capacity, vector<int> item_Weights)
-{
-    vector<int> binCapLeft;
-    binCapLeft.push_back(capacity);
-    vector<int> bestbin;
+int firstFit(vector<int> weights, int capacity, int itemIndex) {
+	int bin = 0;
+	int capacityCopy[itemIndex];
+	
+	// iterate bins in order
+	for (int i = 0; i < itemIndex; i++) {
+		int j;
 
-    for (int i = 0; i < item_Weights.size(); i++)
+		// calculate the bin as encounters
+		for (j = 0; j < bin; j++) {
+			if (capacityCopy[j] >= weights[i]) {
+				capacityCopy[j] -= weights[i];
+				break;
+			}
+		}
 
-    {
-        bool cantFit = true;
-
-        for (int j = 0; j < binCapLeft.size(); j++)
-        {
-            while (item_Weights[i] <= binCapLeft[j])
-            {
-                bestbin.push_back(j);
-                i++;
-            }
-
-            if (bestbin.size() >= 1)
-            {
-                int k = max(bestbin.value);
-                binCapLeft[k] -= item_Weights[i];
-                cantFit = false;
-                break;
-            }
-        }
-
-        if (cantFit == true)
-        {
-            binCapLeft.push_back(capacity);
-            binCapLeft[binCapLeft.size() - 1] -= item_Weights[i];
-        }
-    }
-
-    return binCapLeft.size();
+		// if no bins available, open new one
+		if (j == bin) {
+			capacityCopy[bin] = capacity - weights[i];
+			bin++;
+		}
+	}
+	return bin;
 }
 
-int firstFitD(int capacity, vector<int> item_Weights)
-{
-    sort(item_Weights.begin(), item_Weights.end(), greater<int>());
-    int ffd = firstFit(capacity, item_Weights);
-    return ffd;
+int firstFitDecreasing(vector<int> weights, int capacity, int itemIndex) {
+	vector<int>sortedWeightVector = weights;
+	sort(sortedWeightVector.begin(), sortedWeightVector.end(), std::greater<int>());
+	return firstFit(sortedWeightVector, capacity, itemIndex);
 }
 
-ifstream infile("bin.txt");
+/*  Place the
+** next item into the bin which will leave the least room left
+** over after the item is placed in the bin. If it does not fit
+** in any bin, start a new bin. */
+int bestFit(vector<int> weights, int capacity, int itemIndex) {
+	int bin = 0;
+	int capacityCopy[itemIndex];
+	
+	// put items in arrival order
+	for (int i = 0; i < itemIndex; i++) {
+		int smallestBinCap = capacity;
+		int binIndex = 0;
+		for (int j = 0; j < bin; j++) {
 
-int main()
-{
+			// if bin capacity is bigger than the current weight and substraction of it is smaller than 
+			// minimum capacity, next item should be the one leave the minimum room.
+			if (capacityCopy[j] >= weights[i] && capacityCopy[j] - weights[i] <= smallestBinCap) {
+				binIndex = j;
+				smallestBinCap = capacityCopy[j] - weights[i];
+			}
+		}
 
-    if (!infile)
-    {
-        cout << "File does not exist" << endl;
-    }
-
-    ifstream file("bin.txt");
-
-    int data;
-
-    int num_of_test;
-    int capacity, item_weight = 0;
-    int totalItems = 0;
-    int testCasesCount = 0;
-    while (file >> num_of_test)
-
-    {
-
-        for (int i = 0; i < num_of_test; i++)
-
-        {
-
-            file >> capacity;
-
-            file >> totalItems;
-
-            for (int i = 0; i < totalItems; i++)
-
-            {
-
-                file >> item_weight;
-
-                item_Weight_Vector.push_back(item_weight);
-            }
-            testCasesCount++;
-            int ff = firstFit(capacity, item_Weight_Vector);
-            int ffd = firstFitD(capacity, item_Weight_Vector);
-            item_Weight_Vector.clear();
-            cout << "Test Case: "
-                 << testCasesCount
-                 << " First Fit: "
-                 << ff
-                 << ", First Fit Decreasing: "
-                 << ffd
-                 << endl;
-        }
-    }
-    return 0;
+		// if the smallest capacity is equal to bin capacity, substract it
+		if (smallestBinCap == capacity) {
+			capacityCopy[bin] = capacity - weights[i];
+			bin++;
+		} else {
+			capacityCopy[binIndex] -= weights[i];
+		}
+	}
+	return bin;
 }
