@@ -1,0 +1,9 @@
+Compile:
+g++ -std=c++11 binPacking.cpp -o binPacking
+
+Run:
+./binPacking bin.txt
+
+or 
+
+./binPacking YOUR_INPUT_FILE_NAME
